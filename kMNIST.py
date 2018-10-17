@@ -14,6 +14,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
+from keras.callbacks import ModelCheckpoint
 
 batch_size = 128
 num_classes = 10
@@ -62,11 +63,16 @@ model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adadelta(),
               metrics=['accuracy'])
 
+# Save the checkpoint in the /output folder
+saveDIR = os.path.join(os.getcwd(), "kCheckpoint/")
+checkpoint = ModelCheckpoint(saveDIR, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+
 model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=epochs,
           verbose=1,
-          validation_data=(x_test, y_test))
+          validation_data=(x_test, y_test),
+          callbacks=[checkpoint])
 score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
