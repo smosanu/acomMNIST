@@ -54,13 +54,13 @@ def mnist_model(learning_rate, hparam):
 
   conv1 = conv_layer(x_image,  1,  32, "conv1")
   conv2 = conv_layer(conv1,   32,  64, "conv2")
-  conv3 = conv_layer(conv2,   64, 128, "conv3")
-  conv4 = conv_layer(conv3,  128,  10, "conv4")
+  #conv3 = conv_layer(conv2,   64, 128, "conv3")
+  #conv4 = conv_layer(conv3,  128,  10, "conv4")
 
-  # embedding_size = 7*7*64
-  # embedding_input = flattened
-
-  logits = conv4
+  flattened = tf.reshape(conv2, [-1, 7 * 7 * 64])
+  embedding_input = flattened
+  embedding_size = 7 * 7 * 64
+  logits = fc_layer(flattened, 7 * 7 * 64, 10, "fc_layer")
 
   with tf.name_scope("xent"):
     xent = tf.reduce_mean(
@@ -78,22 +78,22 @@ def mnist_model(learning_rate, hparam):
 
   summ = tf.summary.merge_all()
 
-  # embedding = tf.Variable(tf.zeros([1024, embedding_size]), name="test_embedding")
-  # assignment = embedding.assign(embedding_input)
-  # saver = tf.train.Saver()
+  embedding = tf.Variable(tf.zeros([1024, embedding_size]), name="test_embedding")
+  assignment = embedding.assign(embedding_input)
+  saver = tf.train.Saver()
 
   sess.run(tf.global_variables_initializer())
   writer = tf.summary.FileWriter(LOGDIR + hparam)
   writer.add_graph(sess.graph)
 
-  # config = tf.contrib.tensorboard.plugins.projector.ProjectorConfig()
-  # embedding_config = config.embeddings.add()
-  # embedding_config.tensor_name = embedding.name
-  # embedding_config.sprite.image_path = SPRITES
-  # embedding_config.metadata_path = LABELS
+  config = tf.contrib.tensorboard.plugins.projector.ProjectorConfig()
+  embedding_config = config.embeddings.add()
+  embedding_config.tensor_name = embedding.name
+  embedding_config.sprite.image_path = SPRITES
+  embedding_config.metadata_path = LABELS
   # Specify the width and height of a single thumbnail.
-  # embedding_config.sprite.single_image_dim.extend([28, 28])
-  # tf.contrib.tensorboard.plugins.projector.visualize_embeddings(writer, config)
+  embedding_config.sprite.single_image_dim.extend([28, 28])
+  tf.contrib.tensorboard.plugins.projector.visualize_embeddings(writer, config)
 
   for i in range(2001):
     batch = mnist.train.next_batch(100)
@@ -101,9 +101,9 @@ def mnist_model(learning_rate, hparam):
       [train_accuracy, s] = sess.run([accuracy, summ], feed_dict={x: batch[0], y: batch[1]})
       print("step %d, training accuracy %g" % (i, train_accuracy))
       writer.add_summary(s, i)
-    # if i % 50 == 0:
-    #   sess.run(assignment, feed_dict={x: mnist.test.images[:1024], y: mnist.test.labels[:1024]})
-    #   saver.save(sess, os.path.join(LOGDIR, "model.ckpt"), i)
+    if i % 50 == 0:
+      sess.run(assignment, feed_dict={x: mnist.test.images[:1024], y: mnist.test.labels[:1024]})
+      saver.save(sess, os.path.join(LOGDIR, "model.ckpt"), i)
     sess.run(train_step, feed_dict={x: batch[0], y: batch[1]})
 
 def make_hparam_string(learning_rate):
