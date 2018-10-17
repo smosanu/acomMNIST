@@ -20,7 +20,7 @@ if not (os.path.isfile(LABELS) and os.path.isfile(SPRITES)):
   print("Necessary data files were not found!")
   exit(1)
 
-def conv_layer(input, size_in, size_out, name="conv_layer"):
+def conv_layer(input, size_in, size_out, pool_op, name="conv_layer"):
   with tf.name_scope(name):
     w = tf.Variable(tf.truncated_normal([5, 5, size_in, size_out], stddev=0.1), name="W")
     b = tf.Variable(tf.constant(0.1, shape=[size_out]), name="B")
@@ -29,8 +29,10 @@ def conv_layer(input, size_in, size_out, name="conv_layer"):
     tf.summary.histogram("weights", w)
     tf.summary.histogram("biases", b)
     tf.summary.histogram("activations", act)
-    pool = tf.nn.max_pool(act, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
-    return pool
+    if(pool_op):
+      return tf.nn.max_pool(act, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+    else:
+      return act
 
 def fc_layer(input, size_in, size_out, name="fc_layer"):
   with tf.name_scope(name):
@@ -52,15 +54,17 @@ def mnist_model(learning_rate, hparam):
   tf.summary.image('input', x_image, 3)
   y = tf.placeholder(tf.float32, shape=[None, 10], name="labels")
 
-  conv1 = conv_layer(x_image,  1,  32, "conv1")
-  conv2 = conv_layer(conv1,   32,  64, "conv2")
-  #conv3 = conv_layer(conv2,   64, 128, "conv3")
-  #conv4 = conv_layer(conv3,  128,  10, "conv4")
+  conv1 = conv_layer(x_image,  1,  32, False, "conv1")
+  conv2 = conv_layer(conv1,   32,  32, False, "conv2")
+  conv3 = conv_layer(conv2,   32,  32, True,  "conv3")
+  conv4 = conv_layer(conv3,   32,  64, True,  "conv4")
 
-  flattened = tf.reshape(conv2, [-1, 7 * 7 * 64])
-  embedding_input = flattened
+  flattened = tf.reshape(conv4, [-1, 7 * 7 * 64])
+
   embedding_size = 7 * 7 * 64
-  logits = fc_layer(flattened, 7 * 7 * 64, 10, "fc_layer")
+  embedding_input = flattened
+
+  logits = fc_layer(flattened, embedding_size, 10, "fc_layer")
 
   with tf.name_scope("xent"):
     xent = tf.reduce_mean(
@@ -110,7 +114,7 @@ def make_hparam_string(learning_rate):
   return "lr_%.0E" % (learning_rate)
 
 def main():
-  for learning_rate in [1E-2, 1E-3, 1E-4, 1E-5]:
+  for learning_rate in [1E-2]:#, 1E-3, 1E-4, 1E-5]:
         # Construct a hyperparameter string for each lr
         hparam = make_hparam_string(learning_rate)
         print('Starting run for %s' % hparam)
