@@ -15,6 +15,8 @@ from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint
+import os
+import os.path
 
 batch_size = 128
 num_classes = 10
@@ -64,7 +66,7 @@ model.compile(loss=keras.losses.categorical_crossentropy,
               metrics=['accuracy'])
 
 # Save the checkpoint in the /output folder
-saveDIR = os.path.join(os.getcwd(), "kCheckpoint/")
+saveDIR = os.path.join(os.getcwd(), "kCheckpoint/mnist-4xconv2d.hdf5")
 checkpoint = ModelCheckpoint(saveDIR, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
 model.fit(x_train, y_train,

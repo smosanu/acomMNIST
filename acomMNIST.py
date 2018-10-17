@@ -114,7 +114,7 @@ def make_hparam_string(learning_rate):
   return "lr_%.0E" % (learning_rate)
 
 def main():
-  for learning_rate in [1E-2]:#, 1E-3, 1E-4, 1E-5]:
+  for learning_rate in [1E-2, 1E-3, 1E-4, 1E-5]:
         # Construct a hyperparameter string for each lr
         hparam = make_hparam_string(learning_rate)
         print('Starting run for %s' % hparam)
